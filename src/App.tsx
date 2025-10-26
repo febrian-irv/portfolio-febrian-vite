@@ -81,12 +81,11 @@ function App() {
             </filter>
           </defs>
         </svg>
-        <pre
-          className="text-white absolute top-10 left-10 text-[10px]
-        "
-        >
-          {asciiArt}
-        </pre>
+        <AnimatedAsciiArt
+          text={asciiArt}
+          className="text-white absolute top-10 left-10 text-[10px]"
+          speed={20}
+        />
 
         {/* Introduction */}
         <div className="text-white left-10 absolute">
