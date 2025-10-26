@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --font-averia: "Averia Serif Libre", serif;
+  --font-be-vietnam: "Be Vietnam Pro", sans-serif;
+}
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes illuminate {
+  0% {
+    opacity: 0;
+    filter: brightness(0.5) blur(5px);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1) blur(0px);
+  }
+}
+
+.illuminate {
+  animation: illuminate 3s ease-in-out;
+}
