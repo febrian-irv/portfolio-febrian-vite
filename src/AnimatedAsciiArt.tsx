@@ -1,10 +1,14 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 
 interface AnimatedAsciiArtProps {
   text: string;
   className?: string;
   speed?: number;
   lineDelay?: number;
+  tailLength?: number;
+  randomCharSet?: string;
+  randomizeLineDelays?: boolean; // enable random line delays instead of diagonal
+  lineDelayRange?: [number, number]; // range for random delays [min, max]
 }
 
 interface CharSegment {
@@ -12,24 +16,53 @@ interface CharSegment {
   end: number;
 }
 
+// Memoized line component to prevent unnecessary re-renders
+const MemoizedLine = memo(({ content }: { content: string }) => {
+  return <div>{content}</div>;
+});
+
+MemoizedLine.displayName = 'MemoizedLine';
+
 function AnimatedAsciiArt({
   text,
   className = "",
   speed = 20,
   lineDelay = 3,
+  tailLength = 4,
+  randomCharSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  randomizeLineDelays = false,
+  lineDelayRange = [0, 10],
 }: AnimatedAsciiArtProps) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
 
   const [position, setPosition] = useState(0);
-  const gradientChars = useMemo(
-    () => [".", ":", "-", "=", "+", "*", "#", "%", "@"],
-    []
-  );
 
-  const lineSegments = useMemo(() => {
+  const getRandomChar = useMemo(() => {
+    return (pos: number, charIdx: number, lineIdx: number) => {
+      const seed = pos * 7 + charIdx * 13 + lineIdx * 17;
+      const index = seed % randomCharSet.length;
+      return randomCharSet[index];
+    };
+  }, [randomCharSet]);
+
+  // Generate line-specific delays (either linear diagonal or random)
+  const lineDelays = useMemo(() => {
+    if (!randomizeLineDelays) {
+      // Use linear delays for diagonal effect
+      return lines.map((_, idx) => idx * lineDelay);
+    }
+
+    // Generate random delays for each line
+    const [min, max] = lineDelayRange;
+    return lines.map(() => Math.floor(Math.random() * (max - min + 1)) + min);
+  }, [randomizeLineDelays, lines, lineDelay, lineDelayRange]);
+
+  // Pre-compute segment lookup maps for O(1) access
+  const lineSegmentMaps = useMemo(() => {
     return lines.map((line) => {
       const segments: CharSegment[] = [];
+      const charToSegmentMap = new Map<number, CharSegment>();
       let inSegment = false;
       let segmentStart = 0;
 
@@ -40,25 +73,35 @@ function AnimatedAsciiArt({
           segmentStart = i;
           inSegment = true;
         } else if (isWhitespace && inSegment) {
-          segments.push({ start: segmentStart, end: i - 1 });
+          const segment = { start: segmentStart, end: i - 1 };
+          segments.push(segment);
+          // Map each character index to its segment
+          for (let j = segmentStart; j < i; j++) {
+            charToSegmentMap.set(j, segment);
+          }
           inSegment = false;
         }
       }
 
       if (inSegment) {
-        segments.push({ start: segmentStart, end: line.length - 1 });
+        const segment = { start: segmentStart, end: line.length - 1 };
+        segments.push(segment);
+        // Map remaining characters to segment
+        for (let j = segmentStart; j < line.length; j++) {
+          charToSegmentMap.set(j, segment);
+        }
       }
 
-      return segments;
+      return { segments, charToSegmentMap };
     });
   }, [lines]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setPosition((prev) => {
-        // Account for the last line's delay in the animation duration
-        const totalAnimationLength =
-          maxLength + gradientChars.length + lines.length * lineDelay;
+        // Find the maximum delay to ensure animation runs long enough
+        const maxDelay = Math.max(...lineDelays);
+        const totalAnimationLength = maxLength + tailLength + maxDelay;
         if (prev >= totalAnimationLength) {
           clearInterval(interval);
           return prev;
@@ -68,58 +111,64 @@ function AnimatedAsciiArt({
     }, speed);
 
     return () => clearInterval(interval);
-  }, [maxLength, speed, lines.length, lineDelay]);
+  }, [maxLength, speed, tailLength, lineDelays]);
 
-  const renderCharacter = (
-    char: string,
-    charIndex: number,
-    lineSegments: CharSegment[],
-    lineIndex: number
-  ) => {
-    const isWhitespace = char === " " || char === "\u00A0";
+  const renderLine = useCallback((line: string, lineIndex: number) => {
+    const { charToSegmentMap } = lineSegmentMaps[lineIndex];
+    const effectivePosition = position - lineDelays[lineIndex];
 
-    if (isWhitespace) {
-      return char;
+    // Early bailout: if animation hasn't reached this line yet
+    if (effectivePosition < -tailLength) {
+      return line.replace(/[^ \u00A0]/g, "\u00A0");
     }
 
-    const segment = lineSegments.find(
-      (seg) => charIndex >= seg.start && charIndex <= seg.end
-    );
-
-    if (!segment) {
-      return char;
+    // Early bailout: if animation has passed this line completely
+    if (effectivePosition > line.length + tailLength) {
+      return line;
     }
 
-    const effectivePosition = position - lineIndex * lineDelay;
-    const relativePos = effectivePosition - charIndex;
+    // Use array for O(n) instead of O(n²) string concatenation
+    const result: string[] = [];
 
-    if (relativePos > gradientChars.length) {
-      return char;
+    for (let charIndex = 0; charIndex < line.length; charIndex++) {
+      const char = line[charIndex];
+      const isWhitespace = char === " " || char === "\u00A0";
+
+      if (isWhitespace) {
+        result.push(char);
+        continue;
+      }
+
+      // O(1) lookup instead of O(m) find
+      const segment = charToSegmentMap.get(charIndex);
+
+      if (!segment) {
+        result.push(char);
+        continue;
+      }
+
+      const relativePos = effectivePosition - charIndex;
+
+      if (relativePos > tailLength) {
+        result.push(char);
+      } else if (relativePos > 0 && relativePos <= tailLength) {
+        result.push(getRandomChar(position, charIndex, lineIndex));
+      } else {
+        result.push("\u00A0");
+      }
     }
+    return result.join('');
+  }, [position, lineDelays, lineSegmentMaps, tailLength, getRandomChar]);
 
-    if (relativePos > 0 && relativePos <= gradientChars.length) {
-      const gradientIndex = gradientChars.length - relativePos;
-      return gradientChars[gradientIndex];
-    }
-
-    return "\u00A0";
-  };
+  // Memoize rendered lines to avoid recalculating unchanged lines
+  const renderedLines = useMemo(() => {
+    return lines.map((line, lineIndex) => renderLine(line, lineIndex));
+  }, [lines, renderLine]);
 
   return (
     <pre className={className}>
-      {lines.map((line, lineIndex) => (
-        <div key={lineIndex}>
-          {Array.from(line).map((char, charIndex) => (
-            <span key={charIndex}>
-              {renderCharacter(
-                char,
-                charIndex,
-                lineSegments[lineIndex],
-                lineIndex
-              )}
-            </span>
-          ))}
-        </div>
+      {renderedLines.map((content, lineIndex) => (
+        <MemoizedLine key={lineIndex} content={content} />
       ))}
     </pre>
   );
