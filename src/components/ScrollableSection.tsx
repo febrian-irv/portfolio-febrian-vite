@@ -138,9 +138,7 @@ export default function ScrollableSection({
         ref={scrollContainerRef}
         className="overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth snap-x snap-mandatory"
       >
-        <div className={`flex ${gap} py-2 pb-4 w-max`}>
-          {children}
-        </div>
+        <div className={`flex ${gap} py-2 pb-4 w-max`}>{children}</div>
       </div>
 
       {/* Right Arrow */}

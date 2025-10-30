@@ -28,6 +28,7 @@ import sokratechLogo from "./assets/images/sokratech_logo.png";
 import sokratechImg from "./assets/images/sokratech.png";
 import uigtrLogo from "./assets/images/uigtr_logo.png";
 import uigtrImg from "./assets/images/uigtr.png";
+import searchEngineImg from "./assets/images/search_engine.png";
 
 const svgStyle = {
   position: "absolute" as const,
@@ -211,6 +212,15 @@ function App() {
   ];
 
   const articles = [
+    {
+      title: "Creating Hybrid Retrieval Search Engine",
+      content:
+        "Integrating Lexical and Semantic Score for Information Retrieval",
+      date: "Medium",
+      url: "https://medium.com/@febrian.irv/creating-hybrid-retrieval-search-engine-18e135b5ad2d",
+      imageUrl: searchEngineImg,
+      language: "English",
+    },
     {
       title: "Error Tracking dan Performance Monitoring Menggunakan Sentry",
       content:
