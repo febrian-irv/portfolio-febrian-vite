@@ -102,24 +102,25 @@ export default function ScrollableSection({
       window.removeEventListener("resize", handleResize);
       clearTimeout(scrollTimeout);
     };
-  }, [children]); // Re-run when children change
+  }, [children]);
 
   return (
-    <div className="relative py-4">
-      {/* Left Arrow */}
+    <div className="relative py-4 overflow-visible">
+      {/* Left Vertical Bar - Outside container */}
       <button
         onClick={() => scroll("left")}
         disabled={!canScrollLeft}
         aria-label="Scroll left"
-        className={`absolute left-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 p-3 md:p-4 bg-gray-900/80 hover:bg-gray-800/90 backdrop-blur-sm rounded-full transition-all duration-300 cursor-pointer ${
+        className={`absolute -left-10 top-0 bottom-0 z-30 w-8 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer flex items-center justify-center ${
           canScrollLeft
             ? "opacity-100 visible"
             : "opacity-0 invisible pointer-events-none"
         }`}
       >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent" />
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 md:h-8 md:w-8 text-gray-200"
+          className="h-6 w-6 text-white/70"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -141,20 +142,21 @@ export default function ScrollableSection({
         <div className={`flex ${gap} py-2 pb-4 w-max`}>{children}</div>
       </div>
 
-      {/* Right Arrow */}
+      {/* Right Vertical Bar - Outside container */}
       <button
         onClick={() => scroll("right")}
         disabled={!canScrollRight}
         aria-label="Scroll right"
-        className={`absolute right-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 p-3 md:p-4 bg-gray-900/80 hover:bg-gray-800/90 backdrop-blur-sm rounded-full transition-all duration-300 cursor-pointer ${
+        className={`absolute -right-10 top-0 bottom-0 z-30 w-8 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer flex items-center justify-center ${
           canScrollRight
             ? "opacity-100 visible"
             : "opacity-0 invisible pointer-events-none"
         }`}
       >
+        <div className="absolute inset-0 bg-gradient-to-l from-white/5 to-transparent" />
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 md:h-8 md:w-8 text-gray-200"
+          className="h-6 w-6 text-white/70"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
