@@ -1,5 +1,5 @@
 import profileImg from "../assets/images/pp.jpg";
-import resumePdf from "../assets/files/CV_Febrian Irvansyah_1025-v9-web.pdf";
+import resumePdf from "../assets/files/CV_Febrian Irvansyah_1025-v12.pdf";
 
 const ProfileCards = () => {
   return (
@@ -169,7 +169,7 @@ const ProfileCards = () => {
                 Download Resume
               </p>
               <p className="text-xs text-gray-400 font-be-vietnam">
-                PDF • Updated October 2025
+                PDF • Updated November 2025
               </p>
             </div>
           </div>
